@@ -1,5 +1,6 @@
 from chrome_extension_python import Extension
 
+
 class Capsolver(Extension):
     def __init__(self, api_key, blacklist_enabled=False, blacklist_urls=None, app_id=None):
         super().__init__(
@@ -19,8 +20,11 @@ class Capsolver(Extension):
                 f"return {{ ...e.defaultConfig, apiKey: '{api_key}'{app_id_str} }}"
             )
             content = content.replace(to_replace, replacement)
-            content = content.replace("enabledForBlacklistControl:!1", f"enabledForBlacklistControl:{'!0' if self.blacklist_enabled else '!1'}")
-            content = content.replace("blackUrlList:[]", f"blackUrlList:{self.blacklist_urls}")
+
+            if self.blacklist_enabled:
+                content = content.replace("enabledForBlacklistControl:!1", "enabledForBlacklistControl:!0")
+                content = content.replace("blackUrlList:[]", f"blackUrlList:{self.blacklist_urls}")
+
             return content
 
         for file in self.get_js_files():
@@ -30,8 +34,12 @@ class Capsolver(Extension):
             key_replaced = content.replace("apiKey: '',", f"apiKey: '{api_key}',")
             if app_id:
                 key_replaced = key_replaced.replace("appId: '',", f"appId: '{app_id}',")
-            key_replaced = key_replaced.replace("enabledForBlacklistControl: false,", f"enabledForBlacklistControl: {str(self.blacklist_enabled).lower()},")
-            key_replaced = key_replaced.replace("blackUrlList: [],", f"blackUrlList: {self.blacklist_urls},")
+
+            if self.blacklist_enabled:
+                key_replaced = key_replaced.replace("enabledForBlacklistControl: false,",
+                                                    "enabledForBlacklistControl: true,")
+                key_replaced = key_replaced.replace("blackUrlList: [],", f"blackUrlList: {self.blacklist_urls},")
+
             return key_replaced
 
         self.get_file("/assets/config.js").update_contents(update_config_contents)
